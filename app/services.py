@@ -197,6 +197,64 @@ def cancel_booking(session: Session, booking_id: int) -> Booking:
     return booking
 
 
+def booking_daily_allocation(
+    booking: Booking,
+    timezone_name: str,
+) -> dict[date, int]:
+    """Split one booking's total price across every local calendar day it
+    touches, so the parts sum EXACTLY to booking.total_price_vnd.
+
+    Why this exists: booking.total_price_vnd is one integer covering the
+    whole booking. A booking that crosses local midnight touches two
+    different calendar days, and each day's /analytics/daily call used to
+    work out its own share independently and round it on its own (HALF_UP).
+    Two independent roundings of two halves can each round up, and the day
+    totals no longer add back to the original booking total.
+
+    The fix: compute this booking's split across ALL the days it touches in
+    one pass. Every day except the last is rounded normally. The last day
+    gets whatever is left over (total minus everything already assigned),
+    not its own independently-rounded share. That remainder-absorption is
+    what guarantees sum(allocation.values()) == booking.total_price_vnd,
+    always, by construction, regardless of which days round up or down.
+    """
+    total_hours = Decimal(str((booking.end_time - booking.start_time).total_seconds())) / Decimal("3600")
+    if total_hours <= 0:
+        return {}
+
+    # Walk forward from the booking's local start date, one day at a time,
+    # stopping the moment a day gets zero overlap hours. This naturally
+    # excludes a false "next day" when end_time lands exactly on local
+    # midnight (that day would compute to 0 overlap hours and never be
+    # added), so there's no separate midnight special-case to get wrong.
+    days: list[date] = []
+    day = as_local(booking.start_time, timezone_name).date()
+    while True:
+        day_start, day_end = local_day_utc_bounds(day, timezone_name)
+        if _overlap_hours(booking, day_start, day_end) <= 0:
+            break
+        days.append(day)
+        day = date.fromordinal(day.toordinal() + 1)
+
+    allocation: dict[date, int] = {}
+    running_total = 0
+    for i, d in enumerate(days):
+        if i == len(days) - 1:
+            # Last day absorbs the remainder instead of rounding its own
+            # share. This is the line that makes the total exact.
+            allocation[d] = booking.total_price_vnd - running_total
+            continue
+        day_start, day_end = local_day_utc_bounds(d, timezone_name)
+        day_hours = _overlap_hours(booking, day_start, day_end)
+        share = (
+            Decimal(booking.total_price_vnd) * day_hours / total_hours
+        ).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+        allocation[d] = int(share)
+        running_total += allocation[d]
+
+    return allocation
+
+
 def daily_analytics(
     session: Session,
     day: date,
@@ -214,18 +272,18 @@ def daily_analytics(
         (_overlap_hours(booking, start, end) for booking in bookings),
         Decimal("0"),
     )
-    revenue = Decimal("0")
-    for booking in bookings:
-        total_hours = Decimal(str((booking.end_time - booking.start_time).total_seconds())) / Decimal("3600")
-        if total_hours <= 0:
-            continue
-        day_hours = _overlap_hours(booking, start, end)
-        revenue += Decimal(booking.total_price_vnd) * day_hours / total_hours
+    # Each booking's contribution to *this* day comes from its own full
+    # cross-day allocation, not a fraction rounded in isolation. See
+    # booking_daily_allocation() for why that distinction is the whole fix.
+    revenue = sum(
+        booking_daily_allocation(booking, timezone_name).get(day, 0)
+        for booking in bookings
+    )
 
     return {
         "day": day,
         "timezone_name": timezone_name,
         "confirmed_bookings": len(bookings),
         "booked_hours": round(float(hours), 2),
-        "revenue_vnd": int(revenue.quantize(Decimal("1"), rounding=ROUND_HALF_UP)),
+        "revenue_vnd": int(revenue),
     }
