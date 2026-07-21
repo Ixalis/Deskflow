@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DeskFlow</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; }
+      form, section { display: grid; gap: 10px; margin: 24px 0; }
+      label { display: grid; gap: 4px; }
+      input, select, button { font: inherit; padding: 9px; }
+      button { cursor: pointer; }
+      pre { background: #f3f4f6; padding: 16px; overflow: auto; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>DeskFlow</h1>
+      <p>Workspace availability, local-time pricing and daily revenue.</p>
+
+      <section>
+        <button id="seed" type="button">Create demo space</button>
+        <button id="load" type="button">Refresh spaces</button>
+        <pre id="spaces">No spaces loaded.</pre>
+      </section>
+
+      <form id="quote-form">
+        <h2>Price quote</h2>
+        <label>Space <select id="space" required></select></label>
+        <label>Start <input id="start" type="datetime-local" required /></label>
+        <label>End <input id="end" type="datetime-local" required /></label>
+        <button type="submit">Calculate quote</button>
+      </form>
+      <pre id="quote-output">No quote yet.</pre>
+
+      <form id="analytics-form">
+        <h2>Daily analytics</h2>
+        <label>Day <input id="day" type="date" required /></label>
+        <button type="submit">Load analytics</button>
+      </form>
+      <pre id="analytics-output">No analytics loaded.</pre>
+    </main>
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>
