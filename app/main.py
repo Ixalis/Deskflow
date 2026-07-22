@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from datetime import date
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -155,3 +157,8 @@ def analytics(
         return daily_analytics(session, day, timezone_name)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+static_dir = Path(__file__).resolve().parent.parent / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")

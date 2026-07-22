@@ -1,4 +1,6 @@
-const API = 'http://localhost:8000';
+const API = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  ? 'http://localhost:8000'
+  : '';
 const spacesOutput = document.querySelector<HTMLPreElement>('#spaces')!;
 const quoteOutput = document.querySelector<HTMLPreElement>('#quote-output')!;
 const analyticsOutput = document.querySelector<HTMLPreElement>('#analytics-output')!;
