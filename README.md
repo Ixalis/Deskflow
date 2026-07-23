@@ -110,3 +110,7 @@ docs/                Architecture, product notes and postmortems
 - The pricing rules are deliberately simple and not yet configurable per operator.
 - Availability is checked through the application path; a PostgreSQL range exclusion constraint would provide stronger database-level protection.
 - Authentication, payment and multi-tenant access control are outside this MVP.
+
+## Live demo
+
+[Open DeskFlow](https://deskflow-web-seven.vercel.app)
