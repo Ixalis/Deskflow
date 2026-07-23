@@ -1,8 +1,6 @@
 # DeskFlow
 
-DeskFlow is a small coworking operations platform built to explore three problems that look simple until real constraints arrive: preventing overlapping reservations, pricing inventory from occupancy, and reporting revenue in the operator's local day.
-
-The project uses FastAPI, SQLAlchemy, SQLite, TypeScript and Vite. It began as a backend exercise and grew into a test bed for timezone handling, booking concurrency and database portability.
+Coworking booking and pricing platform with FastAPI, TypeScript, PostgreSQL, time-zone-safe validation and local-day revenue analytics.
 
 ## What it does
 
