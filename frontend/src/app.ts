@@ -1,6 +1,9 @@
-const API = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-  ? 'http://localhost:8000'
-  : '';
+const API = (
+  import.meta.env.VITE_API_URL
+  ?? (['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8000'
+    : '')
+).replace(/\/$/, '');
 const spacesOutput = document.querySelector<HTMLPreElement>('#spaces')!;
 const quoteOutput = document.querySelector<HTMLPreElement>('#quote-output')!;
 const analyticsOutput = document.querySelector<HTMLPreElement>('#analytics-output')!;
